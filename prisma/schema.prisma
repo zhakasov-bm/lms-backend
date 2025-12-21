@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+// prisma/schema.prisma
+datasource db {
+  provider  = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  TEACHER
+  STUDENT
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  phone       String   @unique
+  role        Role     @default(STUDENT)
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  enrollments        Enrollment[] @relation("StudentEnrollment")
+  managedEnrollments Enrollment[] @relation("ManagerEnrollment")
+  coursesCreated     Course[]     @relation("CourseAuthor")
+}
+
+model Course {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  price       Int      @default(0)
+
+  authorId Int
+  author   User @relation("CourseAuthor", fields: [authorId], references: [id])
+
+  enrollments Enrollment[]
+}
+
+model Enrollment {
+  id        Int      @id @default(autoincrement())
+
+  userId   Int
+  user     User @relation("StudentEnrollment", fields: [userId], references: [id])
+
+  courseId Int
+  course   Course @relation(fields: [courseId], references: [id])
+
+  managerId Int?
+  manager   User? @relation("ManagerEnrollment", fields: [managerId], references: [id])
+
+  expiresAt DateTime?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, courseId])
+}

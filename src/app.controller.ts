@@ -10,8 +10,8 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  @Get('welcome')
-  getWelcome(): string {
-    return this.appService.getWelcome();
+  @Get('health/db')
+  dbHealth() {
+    return this.appService.dbHealth();
   }
 }

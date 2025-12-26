@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsInt, isNotEmpty, IsOptional, IsNotEmpty, IsString, Min } from 'class-validator';
 
 export class CreateCourseDto {
   @IsString()
@@ -7,6 +7,14 @@ export class CreateCourseDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  coverImageKey!: string;
+
+  @IsOptional()
+  @IsString()
+  introVideoUrl?: string;
 
   @IsOptional()
   @IsInt()

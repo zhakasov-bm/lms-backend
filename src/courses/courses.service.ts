@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { Role } from '@prisma/client';
 import { CreateCourseDto } from './dto/create-course.dto';
@@ -16,6 +20,7 @@ export class CoursesService {
         title: true,
         description: true,
         price: true,
+        coverImageKey: true,
         authorId: true,
       },
       orderBy: { id: 'desc' },
@@ -31,50 +36,27 @@ export class CoursesService {
         title: true,
         description: true,
         price: true,
+        coverImageKey: true,
+        introVideoUrl: true,
         authorId: true,
+        modules: {
+          select: { id: true, title: true, order: true, isPreview: true },
+          orderBy: { order: 'asc' },
+        },
       },
     });
 
     if (!course) throw new NotFoundException('Course not found');
-    return course;
-  }
 
-  // Protected: толық контент (әзірге placeholder)
-  async getContent(courseId: number, userId: number, role: Role) {
-    // ADMIN/TEACHER өзіне болады (teacher үшін өз курсын тексереміз)
-    const course = await this.db.course.findUnique({
-      where: { id: courseId },
-      select: { id: true, title: true, description: true, price: true, authorId: true },
-    });
-    if (!course) throw new NotFoundException('Course not found');
-
-    if (role === Role.ADMIN) {
-      return { course, content: { message: 'Full content placeholder (ADMIN)' } };
-    }
-
-    if (role === Role.TEACHER) {
-      if (course.authorId !== userId) {
-        throw new ForbiddenException('Teacher can access content only for own courses');
-      }
-      return { course, content: { message: 'Full content placeholder (TEACHER)' } };
-    }
-
-    // STUDENT/MANAGER: enrollment тексеру
-    const enrollment = await this.db.enrollment.findUnique({
-      where: { userId_courseId: { userId, courseId } },
-      select: { id: true, isActive: true, expiresAt: true },
-    });
-
-    const now = new Date();
-    const valid =
-      enrollment?.isActive === true &&
-      (!enrollment.expiresAt || enrollment.expiresAt > now);
-
-    if (!valid) {
-      throw new ForbiddenException('No access: not enrolled (or expired)');
-    }
-
-    return { course, content: { message: 'Full content placeholder (ENROLLED)' } };
+    return {
+      ...course,
+      modules: course.modules.map((m) => ({
+        id: m.id,
+        title: m.title,
+        order: m.order,
+        isLocked: !m.isPreview, // preview емес болса locked
+      })),
+    };
   }
 
   // Teacher/Admin: create
@@ -84,14 +66,27 @@ export class CoursesService {
         title: dto.title,
         description: dto.description,
         price: dto.price ?? 0,
+        coverImageKey: dto.coverImageKey,
+        introVideoUrl: dto.introVideoUrl ?? null,
         authorId,
       },
-      select: { id: true, title: true, description: true, price: true, authorId: true },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        price: true,
+        authorId: true,
+      },
     });
   }
 
   // Teacher/Admin: update (teacher only own)
-  async update(courseId: number, dto: UpdateCourseDto, userId: number, role: Role) {
+  async update(
+    courseId: number,
+    dto: UpdateCourseDto,
+    userId: number,
+    role: Role,
+  ) {
     const course = await this.db.course.findUnique({
       where: { id: courseId },
       select: { id: true, authorId: true },
@@ -106,10 +101,18 @@ export class CoursesService {
       where: { id: courseId },
       data: {
         ...(dto.title !== undefined ? { title: dto.title } : {}),
-        ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.description !== undefined
+          ? { description: dto.description }
+          : {}),
         ...(dto.price !== undefined ? { price: dto.price } : {}),
       },
-      select: { id: true, title: true, description: true, price: true, authorId: true },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        price: true,
+        authorId: true,
+      },
     });
   }
 

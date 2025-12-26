@@ -26,16 +26,6 @@ export class CoursesController {
     return this.courses.getPublicById(id);
   }
 
-  // Protected content (толық контент — enrollment керек)
-  @UseGuards(JwtAuthGuard)
-  @Get(':id/content')
-  getContent(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: { userId: number; role: Role },
-  ) {
-    return this.courses.getContent(id, user.userId, user.role);
-  }
-
   // Create course: TEACHER/ADMIN
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.TEACHER, Role.ADMIN)

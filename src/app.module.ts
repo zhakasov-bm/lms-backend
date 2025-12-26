@@ -4,11 +4,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
-import { UsersController } from './users/users.controller';
 import { SalesController } from './sales/sales.controller';
-import { CoursesController } from './courses/courses.controller';
 import { CoursesModule } from './courses/courses.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
+import { UsersModule } from './users/users.module';
+import { CourseModulesModule } from './course-modules/course-modules.module';
 
 @Module({
   imports: [
@@ -18,9 +18,11 @@ import { EnrollmentsModule } from './enrollments/enrollments.module';
     DatabaseModule,
     AuthModule,
     CoursesModule,
-    EnrollmentsModule
+    EnrollmentsModule,
+    UsersModule,
+    CourseModulesModule
   ],
-  controllers: [AppController, UsersController, SalesController],
+  controllers: [AppController, SalesController],
   providers: [AppService],
 })
 export class AppModule {}

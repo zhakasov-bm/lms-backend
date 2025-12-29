@@ -56,6 +56,11 @@ export class EnrollmentsService {
     if (!dto.userId && !dto.phone) {
       throw new BadRequestException('Provide userId or phone');
     }
+    if (dto.phone && !/^\+?[1-9]\d{7,14}$/.test(dto.phone)) {
+      throw new BadRequestException(
+        'phone must be E.164-like, e.g. +77001234567',
+      );
+    }
 
     if (dto.userId) {
       targetUser = await this.db.user.findUnique({
@@ -70,14 +75,13 @@ export class EnrollmentsService {
       });
 
       if (!targetUser) {
-        targetUser = await this.db.user.create({
-          data: { phone: dto.phone!, isVerified: false, role: Role.STUDENT },
-          select: { id: true, phone: true, role: true, isVerified: true },
-        });
+        throw new NotFoundException(
+          'User not found. Ask the student to register first. Ask the student to register first.',
+        );
       }
     }
 
-    if (!targetUser) throw new BadRequestException('User not found');
+    if (!targetUser) throw new NotFoundException('User not found');
 
     // ensure student role (optional strictness)
     // You can allow enrolling any role, but typically enrollments are for students

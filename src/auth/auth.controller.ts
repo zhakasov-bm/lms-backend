@@ -7,13 +7,13 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 export class AuthController {
     constructor(private readonly auth: AuthService) { }
 
-    @Post('request-otp')
+    @Post('otp/request')
     requestOtp(@Body() dto: RequestOtpDto) {
-        return this.auth.requestOtp(dto.phone);
+        return this.auth.requestOtp(dto);
     }
 
-    @Post('verify-otp')
+    @Post('otp/verify')
     verifyOtp(@Body() dto: VerifyOtpDto) {
-        return this.auth.verifyOtp(dto.phone, dto.code);
+        return this.auth.verifyOtp(dto);
     }
 }

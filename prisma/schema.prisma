@@ -28,6 +28,8 @@ model User {
   isVerified  Boolean  @default(false)
   createdAt   DateTime @default(now())
 
+  fullName    String?
+
   enrollments        Enrollment[] @relation("StudentEnrollment")
   managedEnrollments Enrollment[] @relation("ManagerEnrollment")
   coursesCreated     Course[]     @relation("CourseAuthor")
@@ -86,13 +88,20 @@ model Enrollment {
   @@unique([userId, courseId])
 }
 
-model OtpCode {
-  id        Int      @id @default(autoincrement())
-  phone     String
-  codeHash  String
-  expiresAt DateTime
-  attempts  Int      @default(0)
-  createdAt DateTime @default(now())
+enum OtpPurpose {
+  REGISTER
+  LOGIN
+}
 
-  @@index([phone])
+model OtpCode {
+  id              Int        @id @default(autoincrement())
+  phone           String
+  purpose         OtpPurpose
+  codeHash        String
+  pendingFullName String?
+  attempts        Int        @default(0)
+  expiresAt       DateTime
+  createdAt       DateTime   @default(now())
+
+  @@index([phone, purpose])
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards, Param, ParseIntPipe } from '@nestjs/common';
 import { EnrollmentsService } from './enrollments.service';
 import { AssignEnrollmentDto } from './dto/assign-enrollment.dto';
 import { RemoveEnrollmentDto } from './dto/remove-enrollment.dto';
@@ -36,5 +36,13 @@ export class EnrollmentsController {
   @Get('my')
   my(@CurrentUser() user: any) {
     return this.enrollments.my(user.userId);
+  }
+
+  // Admin/Manager: enrollments by user
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MANAGER, Role.ADMIN)
+  @Get('user/:userId')
+  byUser(@Param('userId', ParseIntPipe) userId: number) {
+    return this.enrollments.byUser(userId);
   }
 }

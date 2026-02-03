@@ -17,6 +17,14 @@ export class UsersController {
     return { ok: true, user };
   }
 
+  // ✅ Admin only: list all users
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.MANAGER)
+  @Get()
+  listAll() {
+    return this.users.listAll();
+  }
+
   // ✅ Sales/Admin search users by phone or last digits
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MANAGER, Role.ADMIN)

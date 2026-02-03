@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsInt, IsObject, IsOptional, IsString, Min } from 'class-validator';
 
 export class UpdateCourseModuleDto {
   @IsOptional()
@@ -12,4 +12,9 @@ export class UpdateCourseModuleDto {
   @IsOptional()
   @IsBoolean()
   isPreview?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  order?: number;
 }

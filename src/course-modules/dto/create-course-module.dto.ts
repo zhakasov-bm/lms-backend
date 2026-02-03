@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsObject, IsOptional, IsString, Min } from 'class-validator';
 
 export class CreateCourseModuleDto {
   @IsString()
@@ -11,9 +11,4 @@ export class CreateCourseModuleDto {
   @IsOptional()
   @IsBoolean()
   isPreview?: boolean;
-
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  order?: number; 
 }

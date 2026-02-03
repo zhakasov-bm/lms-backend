@@ -11,7 +11,7 @@ generator client {
 
 // prisma/schema.prisma
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 enum Role {
@@ -21,14 +21,30 @@ enum Role {
   STUDENT
 }
 
-model User {
-  id          Int      @id @default(autoincrement())
-  phone       String   @unique
-  role        Role     @default(STUDENT)
-  isVerified  Boolean  @default(false)
-  createdAt   DateTime @default(now())
+enum QuestionType {
+  SINGLE
+  MULTI
+}
 
-  fullName    String?
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  phone      String   @unique
+  role       Role     @default(STUDENT)
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  fullName String?
 
   enrollments        Enrollment[] @relation("StudentEnrollment")
   managedEnrollments Enrollment[] @relation("ManagerEnrollment")
@@ -36,13 +52,17 @@ model User {
 }
 
 model Course {
-  id          Int      @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   title       String
   description String?
-  price       Int      @default(0)
+  price       Int     @default(0)
 
-  coverImageKey String?   // MVP-де nullable, бірақ API-де міндетті етеміз
-  introVideoUrl String?   // optional
+  status        CourseStatus @default(DRAFT)
+  coverImageKey String? // MVP-де nullable, бірақ API-де міндетті етеміз
+  introVideoUrl String? // optional
+
+  publishedAt   DateTime?
+  unpublishedAt DateTime?
 
   authorId Int
   author   User @relation("CourseAuthor", fields: [authorId], references: [id])
@@ -52,28 +72,135 @@ model Course {
 }
 
 model CourseModule {
-  id          Int      @id @default(autoincrement())
-  
-  courseId    Int
-  course      Course   @relation(fields: [courseId], references: [id])
+  id Int @id @default(autoincrement())
 
-  title       String
-  order       Int
-  videoUrl    String?
-  isPreview   Boolean  @default(false)
+  courseId Int
+  course   Course @relation(fields: [courseId], references: [id])
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  title     String
+  order     Int
+  videoUrl  String?
+  isPreview Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  quiz ModuleQuiz?
 
   @@unique([courseId, order])
   @@index([courseId])
 }
 
-model Enrollment {
-  id        Int      @id @default(autoincrement())
+model ModuleQuiz {
+  id       Int          @id @default(autoincrement())
+  moduleId Int          @unique
+  module   CourseModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
-  userId   Int
-  user     User @relation("StudentEnrollment", fields: [userId], references: [id])
+  title       String  @default("Quiz")
+  isPublished Boolean @default(false)
+
+  //optional settings
+  timeLimitSec Int?
+  attemptLimit Int? //null => unlimited
+  passingScore Int? //optional (points)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  questions QuizQuestion[]
+  attempts  QuizAttempt[]
+
+  @@index([moduleId])
+}
+
+model QuizQuestion {
+  id     Int        @id @default(autoincrement())
+  quizId Int
+  quiz   ModuleQuiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  type   QuestionType
+  text   String
+  points Int          @default(1)
+  order  Int
+
+  options QuizOption[]
+  answers AttemptAnswer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([quizId, order])
+  @@index([quizId])
+}
+
+model QuizOption {
+  id         Int          @id @default(autoincrement())
+  questionId Int
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  text      String
+  isCorrect Boolean @default(false)
+  order     Int
+
+  chosenIn AttemptAnswerOption[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([questionId, order])
+  @@index([questionId])
+}
+
+model QuizAttempt {
+  id     Int        @id @default(autoincrement())
+  quizId Int
+  quiz   ModuleQuiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  userId Int
+  status AttemptStatus @default(IN_PROGRESS)
+
+  startedAt   DateTime  @default(now())
+  submittedAt DateTime?
+
+  score    Int @default(0)
+  maxScore Int @default(0)
+
+  answers AttemptAnswer[]
+
+  @@unique([quizId, userId])
+  @@index([userId])
+}
+
+model AttemptAnswer {
+  id        Int         @id @default(autoincrement())
+  attemptId Int
+  attempt   QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  questionId Int
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Restrict)
+
+  chosen AttemptAnswerOption[]
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+}
+
+model AttemptAnswerOption {
+  answerId Int
+  answer   AttemptAnswer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  optionId Int
+  option   QuizOption @relation(fields: [optionId], references: [id], onDelete: Restrict)
+
+  @@id([answerId, optionId])
+  @@index([optionId])
+}
+
+model Enrollment {
+  id Int @id @default(autoincrement())
+
+  userId Int
+  user   User @relation("StudentEnrollment", fields: [userId], references: [id])
 
   courseId Int
   course   Course @relation(fields: [courseId], references: [id])

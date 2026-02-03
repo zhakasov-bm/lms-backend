@@ -45,4 +45,18 @@ export class UsersService {
       select: { id: true, phone: true, role: true, isVerified: true },
     });
   }
+
+  async listAll() {
+    return this.db.user.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        phone: true,
+        role: true,
+        isVerified: true,
+        createdAt: true,
+        fullName: true,
+      },
+    });
+  }
 }

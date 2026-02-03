@@ -175,4 +175,31 @@ export class EnrollmentsService {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  // Admin/Manager: view enrollments by user
+  async byUser(userId: number) {
+    const user = await this.db.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    return this.db.enrollment.findMany({
+      where: {
+        userId,
+        isActive: true,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+      select: {
+        id: true,
+        courseId: true,
+        expiresAt: true,
+        createdAt: true,
+        course: {
+          select: { id: true, title: true, description: true, price: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }
